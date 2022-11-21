@@ -8,9 +8,10 @@ std::shared_ptr<Client> Server::add_client(std::string id){
     for(const auto &[name,value]:clients){
         const std::strong_ordering order = id <=> (*name).get_id();
         if(std::is_eq(order)){
-            std::default_random_engine e;
+            std::random_device rd;
+            std::mt19937 mt(rd());
             std::uniform_int_distribution<int> u(1000,9999);
-            id+=std::to_string(u(e));
+            id+=std::to_string(u(mt));
             break;
         }
     }
@@ -40,7 +41,7 @@ const double Server::get_wallet(const std::string& id)const{
     throw std::logic_error("Client is not found");
 }
 
-bool parse_trx(const std::string& trx, std::string sender, std::string receiver, double value){
+bool Server::parse_trx(const std::string& trx, std::string sender, std::string receiver, double value)const {
     size_t cnt=0;
     std::string svalue;
     for(const auto& c:trx){
@@ -50,11 +51,9 @@ bool parse_trx(const std::string& trx, std::string sender, std::string receiver,
         }
         if(cnt==0){
             sender+=c;
-        }
-        if(cnt==1){
+        }else if(cnt==1){
             receiver+=c;
-        }
-        if(cnt==2){
+        }else if(cnt==2){
             svalue+=c;
         }
     }
@@ -65,7 +64,27 @@ bool parse_trx(const std::string& trx, std::string sender, std::string receiver,
     return true;
 }
 
-bool Server::add_pending_trx(const std::string trx, const std::string signature)const{
+bool Server::add_pending_trx(const std::string& trx, const std::string signature)const{
+    std::string sender_id,receiver_id;
+    double value;
+    parse_trx(trx,sender_id,receiver_id,value);
+    bool sign_true=crypto::verifySignature(get_client(sender_id)->get_publickey(),trx,signature);
+    if(sign_true&&get_client(sender_id)->get_wallet()>=value){
+        pending_trxs.push_back(trx);
+        return true;
+    }
+    return false;
+}
+
+size_t mine(){
     
+}
+
+void show_wallets(const Server& server){
+    std::cout<<"*******************************"<<std::endl;
+    for(const auto&  client:server.clients){
+        std::cout<<client.first->get_id()<<" : "<<client.second<<std::endl;
+    }
+    std::cout<<"*******************************"<<std::endl;
 }
 

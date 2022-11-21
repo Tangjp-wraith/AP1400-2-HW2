@@ -21,8 +21,14 @@ const double Client::get_wallet()const{
 }
 
 std::string Client::sign(const std::string& txt)const {
-    std::string signature = crypto::signMessage(private_key,txt);
+    std::string new_sign = crypto::signMessage(private_key,txt);
+    return new_sign;
+}
+
+bool transfer_money(const std::string& receiver, const double& value){
     
 }
+
+size_t generate_nonce();
 
 
